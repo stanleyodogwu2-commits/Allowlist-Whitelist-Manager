@@ -1,0 +1,10 @@
+[project]
+name = "allowlist-whitelist-manager"
+authors = ["emmanuel"]
+description = "Allowlist/Whitelist Manager - NFT projects need flexible mint access control systems"
+telemetry = false
+
+[contracts.allowlist-whitelist-manager]
+path = "contracts/allowlist-whitelist-manager.clar"
+clarity_version = 2
+epoch = "2.4"

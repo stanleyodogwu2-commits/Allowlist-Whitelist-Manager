@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Allowlist / Whitelist Manager - v2 (Redesign)</title>
+    <style>
+      :root {
+        --bg: #050816;
+        --card: #111827;
+        --accent: #22c55e;
+        --accent-soft: rgba(34, 197, 94, 0.1);
+        --text: #f9fafb;
+        --muted: #9ca3af;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: radial-gradient(circle at top, #1f2937, #020617);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        padding: 16px 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #1f2937;
+        backdrop-filter: blur(10px);
+        background: linear-gradient(to right, rgba(15,23,42,0.9), rgba(15,23,42,0.4));
+      }
+      header h1 {
+        font-size: 18px;
+        margin: 0;
+      }
+      header span.badge {
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 11px;
+      }
+      .connect {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .connect button {
+        border-radius: 999px;
+        border: none;
+        padding: 6px 14px;
+        background: var(--accent);
+        color: #022c22;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 2fr 1.2fr;
+        gap: 16px;
+        padding: 16px 32px 32px;
+        flex: 1;
+      }
+      .panel {
+        background: linear-gradient(145deg, rgba(15,23,42,0.9), rgba(15,23,42,0.7));
+        border-radius: 16px;
+        padding: 16px 18px;
+        border: 1px solid #1f2937;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      }
+      .panel h2 {
+        margin: 0 0 4px;
+        font-size: 15px;
+      }
+      .panel p.caption {
+        margin: 0 0 12px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .field-row {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      label span {
+        display: block;
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 2px;
+      }
+      input {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #1f2937;
+        padding: 6px 8px;
+        background: #020617;
+        color: var(--text);
+        font-size: 12px;
+      }
+      .button-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .button-row button {
+        flex: 1;
+        border-radius: 999px;
+        border: 1px solid #1f2937;
+        padding: 6px 10px;
+        font-size: 12px;
+        cursor: pointer;
+        background: #020617;
+        color: var(--text);
+      }
+      .button-row button.primary {
+        background: var(--accent);
+        color: #022c22;
+        border-color: transparent;
+      }
+      .timeline {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .pill {
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid #1f2937;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .pill.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .log {
+        background: #020617;
+        border-radius: 10px;
+        padding: 10px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 11px;
+        max-height: 260px;
+        overflow: auto;
+      }
+      .log-line {
+        opacity: 0.9;
+      }
+      .log-line span.tag {
+        color: var(--accent);
+        margin-right: 6px;
+      }
+      footer {
+        padding: 8px 32px 16px;
+        font-size: 11px;
+        color: var(--muted);
+        border-top: 1px solid #1f2937;
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Allowlist / Whitelist Manager</h1>
+        <span class="badge">v2 – UX-focused redesign</span>
+      </div>
+      <div class="connect">
+        <span id="connected-label">Not connected</span>
+        <button id="connect">Connect Stacks Wallet</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>Phase &amp; Access Control Composer</h2>
+        <p class="caption">Design your mint phases and manage who can mint, without touching the contract code.</p>
+
+        <div class="field-row">
+          <label>
+            <span>Phase ID</span>
+            <input id="phase-id" type="number" value="1" />
+          </label>
+          <label>
+            <span>Name</span>
+            <input id="phase-name" value="Presale" />
+          </label>
+          <label>
+            <span>Max per wallet</span>
+            <input id="max-per" type="number" value="2" />
+          </label>
+        </div>
+
+        <div class="field-row">
+          <label>
+            <span>Start height</span>
+            <input id="start-height" type="number" value="0" />
+          </label>
+          <label>
+            <span>End height</span>
+            <input id="end-height" type="number" value="100" />
+          </label>
+          <label>
+            <span>Price (uSTX)</span>
+            <input id="price" type="number" value="1000000" />
+          </label>
+        </div>
+
+        <div class="button-row">
+          <button class="primary" id="create-phase">Create / Update Phase</button>
+          <button id="preview-call">Preview contract call</button>
+        </div>
+
+        <hr style="border-color:#1f2937; margin: 14px 0;" />
+
+        <div class="timeline">
+          <div class="pill active">1. Configure phase</div>
+          <div class="pill">2. Upload CSV allowlist</div>
+          <div class="pill">3. Plug into NFT mint</div>
+        </div>
+
+        <div class="field-row" style="grid-template-columns: 1.4fr 1fr 1fr; margin-top: 10px;">
+          <label>
+            <span>Wallet principal</span>
+            <input id="wl-user" placeholder="ST… or use connected" />
+          </label>
+          <label>
+            <span>Phase</span>
+            <input id="wl-phase-id" type="number" value="1" />
+          </label>
+          <label>
+            <span>Qty to mint</span>
+            <input id="qty" type="number" value="1" />
+          </label>
+        </div>
+
+        <div class="button-row">
+          <button id="add-wl">Add to allowlist</button>
+          <button id="remove-wl">Remove</button>
+          <button class="primary" id="check-consume">Check &amp; consume</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Live Console</h2>
+        <p class="caption">Shows the exact contract calls the UI would send via <code>@stacks/transactions</code>.</p>
+        <div class="log" id="log"></div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Designed for a 5-minute demo: configure &rarr; allowlist &rarr; mint check.</span>
+      <span>Contract: <code>allowlist-whitelist-manager</code></span>
+    </footer>
+
+    <script>
+      const state = {
+        address: null,
+        phases: {},
+        allowlist: {},
+      };
+
+      const logEl = document.getElementById('log');
+      function log(tag, message, payload) {
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.innerHTML = `<span class="tag">[${tag}]</span>${message}`;
+        if (payload) {
+          const pre = document.createElement('pre');
+          pre.textContent = JSON.stringify(payload, null, 2);
+          pre.style.margin = '2px 0 6px 18px';
+          line.appendChild(pre);
+        }
+        logEl.prepend(line);
+      }
+
+      document.getElementById('connect').onclick = () => {
+        // In a real app, this would call openSTXTransfer or showConnect from @stacks/connect
+        state.address = 'ST_TEST_WALLET_1';
+        document.getElementById('connected-label').textContent = `Connected: ${state.address}`;
+        log('wallet', 'Connected to mock Stacks wallet', { principal: state.address });
+      };
+
+      function readPhaseFromForm() {
+        return {
+          id: Number((document.getElementById('phase-id')).value),
+          name: (document.getElementById('phase-name')).value,
+          start: Number((document.getElementById('start-height')).value),
+          end: Number((document.getElementById('end-height')).value),
+          maxPerAddress: Number((document.getElementById('max-per')).value),
+          price: Number((document.getElementById('price')).value),
+        };
+      }
+
+      document.getElementById('create-phase').onclick = () => {
+        const phase = readPhaseFromForm();
+        state.phases[phase.id] = phase;
+        log('tx', 'Simulate contract-call create-phase', {
+          contract: 'allowlist-whitelist-manager',
+          function: 'create-phase',
+          args: [phase.id, phase.name, phase.start, phase.end, phase.maxPerAddress, phase.price],
+        });
+      };
+
+      document.getElementById('preview-call').onclick = () => {
+        const phase = readPhaseFromForm();
+        log('preview', 'Stacks JS payload for create-phase', {
+          contractAddress: '<deployer>',
+          contractName: 'allowlist-whitelist-manager',
+          functionName: 'create-phase',
+          functionArgs: {
+            id: `u${phase.id}`,
+            name: `(string-ascii "${phase.name}")`,
+            start: `u${phase.start}`,
+            end: `u${phase.end}`,
+            maxPerAddress: `u${phase.maxPerAddress}`,
+            price: `u${phase.price}`,
+          },
+        });
+      };
+
+      document.getElementById('add-wl').onclick = () => {
+        const phaseId = Number((document.getElementById('wl-phase-id')).value);
+        const user = (document.getElementById('wl-user')).value || state.address;
+        const key = `${phaseId}::${user}`;
+        state.allowlist[key] = { minted: 0 };
+        log('tx', 'Simulate add-to-allowlist', {
+          function: 'add-to-allowlist',
+          args: [phaseId, user],
+        });
+      };
+
+      document.getElementById('remove-wl').onclick = () => {
+        const phaseId = Number((document.getElementById('wl-phase-id')).value);
+        const user = (document.getElementById('wl-user')).value || state.address;
+        const key = `${phaseId}::${user}`;
+        delete state.allowlist[key];
+        log('tx', 'Simulate remove-from-allowlist', {
+          function: 'remove-from-allowlist',
+          args: [phaseId, user],
+        });
+      };
+
+      document.getElementById('check-consume').onclick = () => {
+        const phaseId = Number((document.getElementById('wl-phase-id')).value);
+        const qty = Number((document.getElementById('qty')).value);
+        const user = (document.getElementById('wl-user')).value || state.address;
+        const key = `${phaseId}::${user}`;
+        const phase = state.phases[phaseId];
+        const entry = state.allowlist[key];
+
+        if (!phase) {
+          log('error', 'Phase not found', { phaseId });
+          return;
+        }
+        if (!entry) {
+          log('error', 'Wallet is not on allowlist for this phase', { phaseId, user });
+          return;
+        }
+        const newTotal = (entry.minted || 0) + qty;
+        if (newTotal > phase.maxPerAddress) {
+          log('error', 'Mint limit exceeded', { phaseId, user, requested: qty, totalIfMinted: newTotal });
+          return;
+        }
+        entry.minted = newTotal;
+        log('ok', 'Mint allowed – would call check-and-consume', {
+          function: 'check-and-consume',
+          args: [phaseId, user, qty],
+          newTotal,
+        });
+      };
+    </script>
+  </body>
+</html>

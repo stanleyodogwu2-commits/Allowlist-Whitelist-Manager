@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Allowlist / Whitelist Manager - v1</title>
+    <style>
+      body { font-family: system-ui, sans-serif; padding: 16px; }
+      .card { border: 1px solid #ddd; padding: 16px; margin-bottom: 16px; border-radius: 8px; }
+      label { display: block; margin-top: 8px; }
+      input, select { width: 100%; padding: 4px 8px; margin-top: 4px; }
+      button { margin-top: 12px; padding: 6px 12px; }
+      pre { background: #f7f7f7; padding: 8px; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <h1>Allowlist / Whitelist Manager - v1</h1>
+    <p>Basic UI to exercise the Clarity allowlist manager contract using a Stacks wallet.</p>
+
+    <div class="card">
+      <h2>1. Connect Wallet (simulated)</h2>
+      <p>
+        In a real app this button would use <code>@stacks/connect</code> to authenticate the
+        user and obtain their Stacks address. Here we simply mock the address.
+      </p>
+      <button id="connect">Connect Wallet</button>
+      <p>Connected address: <span id="address">-</span></p>
+    </div>
+
+    <div class="card">
+      <h2>2. Create Phase</h2>
+      <label>Phase ID <input id="phase-id" type="number" value="1" /></label>
+      <label>Name <input id="phase-name" value="presale" /></label>
+      <label>Start height <input id="start-height" type="number" value="0" /></label>
+      <label>End height <input id="end-height" type="number" value="100" /></label>
+      <label>Max per address <input id="max-per" type="number" value="2" /></label>
+      <label>Price (uSTX) <input id="price" type="number" value="1000000" /></label>
+      <button id="create-phase">Simulate create-phase()</button>
+    </div>
+
+    <div class="card">
+      <h2>3. Manage Allowlist</h2>
+      <label>Wallet principal <input id="wl-user" placeholder="ST..." /></label>
+      <label>Phase ID <input id="wl-phase-id" type="number" value="1" /></label>
+      <button id="add-wl">Simulate add-to-allowlist()</button>
+      <button id="remove-wl">Simulate remove-from-allowlist()</button>
+    </div>
+
+    <div class="card">
+      <h2>4. Check &amp; consume mint</h2>
+      <label>Quantity <input id="qty" type="number" value="1" /></label>
+      <button id="check-consume">Simulate check-and-consume()</button>
+    </div>
+
+    <div class="card">
+      <h2>Debug output</h2>
+      <pre id="log"></pre>
+    </div>
+
+    <script>
+      const state = {
+        address: null,
+        phases: {},
+        allowlist: {},
+      };
+
+      function log(msg) {
+        const el = document.getElementById('log');
+        el.textContent += msg + '\n';
+      }
+
+      document.getElementById('connect').onclick = () => {
+        state.address = 'ST_TEST_WALLET_1';
+        document.getElementById('address').textContent = state.address;
+        log('Connected to mock address ' + state.address);
+      };
+
+      document.getElementById('create-phase').onclick = () => {
+        const id = Number((document.getElementById('phase-id')).value);
+        const phase = {
+          id,
+          name: (document.getElementById('phase-name')).value,
+          start: Number((document.getElementById('start-height')).value),
+          end: Number((document.getElementById('end-height')).value),
+          maxPerAddress: Number((document.getElementById('max-per')).value),
+          price: Number((document.getElementById('price')).value),
+        };
+        state.phases[id] = phase;
+        log('Created phase ' + JSON.stringify(phase));
+      };
+
+      document.getElementById('add-wl').onclick = () => {
+        const phaseId = Number((document.getElementById('wl-phase-id')).value);
+        const user = (document.getElementById('wl-user')).value || state.address;
+        const key = phaseId + '::' + user;
+        state.allowlist[key] = { minted: 0 };
+        log(`Allowlisted ${user} in phase ${phaseId}`);
+      };
+
+      document.getElementById('remove-wl').onclick = () => {
+        const phaseId = Number((document.getElementById('wl-phase-id')).value);
+        const user = (document.getElementById('wl-user')).value || state.address;
+        const key = phaseId + '::' + user;
+        delete state.allowlist[key];
+        log(`Removed ${user} from phase ${phaseId}`);
+      };
+
+      document.getElementById('check-consume').onclick = () => {
+        const phaseId = Number((document.getElementById('wl-phase-id')).value);
+        const qty = Number((document.getElementById('qty')).value);
+        const user = (document.getElementById('wl-user')).value || state.address;
+        const key = phaseId + '::' + user;
+        const phase = state.phases[phaseId];
+        const entry = state.allowlist[key];
+
+        if (!phase) {
+          log('ERR: phase not found');
+          return;
+        }
+        if (!entry) {
+          log('ERR: user not on allowlist');
+          return;
+        }
+        const newTotal = (entry.minted || 0) + qty;
+        if (newTotal > phase.maxPerAddress) {
+          log('ERR: mint limit exceeded');
+          return;
+        }
+        entry.minted = newTotal;
+        log(`Mint allowed. New total for ${user} in phase ${phaseId}: ${newTotal}`);
+      };
+    </script>
+  </body>
+</html>
